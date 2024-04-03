@@ -1,5 +1,12 @@
 ### Hi there 👋
 
+## Introduction
+안녕하세요.
+오픈소스소프트웨어의이해 수업을 듣고 있습니다.
+
+## Career
+영남대학교 컴퓨터공학과 3학년 최효정
+
 <!--
 **choihyojeong/choihyojeong** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
