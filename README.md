@@ -7,6 +7,9 @@
 ## Career
 영남대학교 컴퓨터공학과 3학년 최효정
 
+## Link
+E-mail: chj030405@yu.ac.kr
+
 <!--
 **choihyojeong/choihyojeong** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
