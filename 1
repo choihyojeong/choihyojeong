@@ -1,0 +1,92 @@
+pragma solidity >=0.4.22 <0.7.0;
+
+contract Ballot {
+    
+    // 한 명의 투표자를 나타내는 구조체
+    struct Voter {
+        uint weight;       // 위임에 의해 누적된 투표 권한 수
+        bool voted;        // 이미 투표했는지 여부
+        address delegate;  // 투표를 위임한 대상
+        uint vote;         // 투표한 제안의 인덱스
+    }
+
+    // 하나의 제안을 나타내는 구조체
+    struct Proposal {
+        bytes32 name;      // 제안의 이름 (최대 32바이트)
+        uint voteCount;    // 받은 투표 수
+    }
+
+    address public chairperson; // 의장 주소
+    mapping(address => Voter) public voters; // 주소 -> 투표자
+    Proposal[] public proposals; // 제안 목록
+
+    // 생성자: 제안 이름 배열을 받아 제안 목록 초기화
+    constructor(bytes32[] memory proposalNames) public {
+        chairperson = msg.sender; // 계약 배포자를 의장으로 지정
+        voters[chairperson].weight = 1; // 의장에게 투표 권한 부여
+
+        for (uint i = 0; i < proposalNames.length; i++) {
+            proposals.push(Proposal({
+                name: proposalNames[i],
+                voteCount: 0
+            }));
+        }
+    }
+
+    // 투표권 부여 함수 (의장만 호출 가능)
+    function giveRightToVote(address voter) public {
+        require(msg.sender == chairperson, "의장만 투표권을 부여할 수 있습니다.");
+        require(!voters[voter].voted, "이미 투표한 유권자입니다.");
+        require(voters[voter].weight == 0, "이미 권한이 있습니다.");
+        voters[voter].weight = 1;
+    }
+
+    // 투표를 다른 사람에게 위임
+    function delegate(address to) public {
+        Voter storage sender = voters[msg.sender];
+        require(!sender.voted, "이미 투표했습니다.");
+        require(to != msg.sender, "자기 자신에게 위임할 수 없습니다.");
+
+        // 위임 받은 사람이 또 위임했는지 확인하고 끝까지 따라감
+        while (voters[to].delegate != address(0)) {
+            to = voters[to].delegate;
+            require(to != msg.sender, "위임 루프가 발생했습니다.");
+        }
+
+        sender.voted = true;
+        sender.delegate = to;
+
+        Voter storage delegate_ = voters[to];
+        if (delegate_.voted) {
+            proposals[delegate_.vote].voteCount += sender.weight;
+        } else {
+            delegate_.weight += sender.weight;
+        }
+    }
+
+    // 투표 실행 함수
+    function vote(uint proposal) public {
+        Voter storage sender = voters[msg.sender];
+        require(sender.weight != 0, "투표 권한이 없습니다.");
+        require(!sender.voted, "이미 투표했습니다.");
+        sender.voted = true;
+        sender.vote = proposal;
+        proposals[proposal].voteCount += sender.weight;
+    }
+
+    // 가장 많은 표를 얻은 제안의 인덱스 반환
+    function getWinner() public view returns (uint winner) {
+        uint winningVoteCount = 0;
+        for (uint p = 0; p < proposals.length; p++) {
+            if (proposals[p].voteCount > winningVoteCount) {
+                winningVoteCount = proposals[p].voteCount;
+                winner = p;
+            }
+        }
+    }
+
+    // 승리한 제안의 이름 반환
+    function winnerName() public view returns (bytes32 name) {
+        name = proposals[getWinner()].name;
+    }
+}
